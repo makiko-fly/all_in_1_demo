@@ -9,6 +9,7 @@ I wrote a simple front-end that can access some of the APIs provided by api-gate
 
 ## Planned Feature List
 - Backend: service discovery, list microservice status [finished]
+- Backend: dao layer, access and modify user data in mysql [finished]
 - Backend: auth service, login, register and list users [finished]
 - Backend: deploy onto aws eks
 - Backend: continuous integration
