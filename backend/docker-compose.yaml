@@ -1,0 +1,37 @@
+services:
+  api_gateway:
+    build: ./api_gateway
+    volumes:
+      - ./common:/app/common
+    ports:
+      - "5000:5000"
+    depends_on:
+      - service_auth
+      - service_reports
+
+
+  service_auth:
+    build:
+      context: ./service_auth
+      dockerfile: Dockerfile
+    volumes:
+      - ./common:/app/common
+    ports:
+      - "5001:5001"
+    depends_on:
+      - redis
+
+  service_reports:
+    build:
+      context: ./service_reports
+      dockerfile: Dockerfile
+    volumes:
+      - ./common:/app/common
+    ports:
+      - "5002:5002"
+
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6379:6379"
