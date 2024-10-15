@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Microservices Dashboard</h1>
+
+        <div class="section" id="user-section">
+            <h2>User Information</h2>
+            <div id="user-info"></div>
+            <button id="logout-btn">Logout</button>
+        </div>
+
+        <div class="section" id="user-list-section">
+            <h2>User List</h2>
+            <button id="list-users-btn">Refresh User List</button>
+            <ul id="user-list"></ul>
+        </div>
+
+        <div class="section" id="services-section">
+            <h2>Services Status</h2>
+            <div id="services-list"></div>
+        </div>
+    </div>
+
+    <script src="static/js/dashboard.js"></script>
+</body>
+</html>

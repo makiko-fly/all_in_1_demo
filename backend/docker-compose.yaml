@@ -16,10 +16,19 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./common:/app/common
+      - ./dao:/app/dao
+    environment:
+      MYSQL_DATABASE: demo_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: pw_123
+      MYSQL_HOST: host.docker.internal
+      MYSQL_PORT: 3306
     ports:
       - "5001:5001"
     depends_on:
       - redis
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   service_reports:
     build:
@@ -35,3 +44,15 @@ services:
     image: "redis:alpine"
     ports:
       - "6379:6379"
+
+#  mysql:
+#    image: mysql:8.0
+#    environment:
+##      MYSQL_ROOT_PASSWORD: pw_123
+#      MYSQL_DATABASE: demo_db
+#      MYSQL_USER: root
+#      MYSQL_PASSWORD: pw_123
+#    volumes:
+#      - mysql_data:/var/lib/mysql
+#    ports:
+#      - "3306:3306"
