@@ -15,7 +15,7 @@ I wrote a simple front-end that can access some of the APIs provided by api-gate
   
 - FrontEnd: login page [finished]
 - FrontEnd: dashboard page, display services and user list [finished]
-- FrontEnd: to be defined
+- FrontEnd: big task, use react or vue
   
 - DevOps: deploy onto aws eks
 - DevOps: continuous integration
