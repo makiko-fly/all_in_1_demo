@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-front-end
+  annotations:
+    kubernetes.io/ingress.class: nginx  # Use the appropriate ingress class for your cluster
+spec:
+  rules:
+  - http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: front-end-sample-1-service
+              port:
+                number: 80

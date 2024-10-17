@@ -1,0 +1,30 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: my-minimal-cluster
+  region: us-east-2
+
+managedNodeGroups:
+  - name: ng-t2-micro-max-20-pods
+    minSize: 1
+    maxSize: 4
+    desiredCapacity: 2
+    privateNetworking: true
+    labels:
+      pod-capacity: high
+    tags:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/your-cluster-name: "owned"
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        albIngress: true
+        cloudWatch: true
+    launchTemplate:
+      id: lt-093b9b8187b031efb  # Replace with your Launch Template ID if you're using one, or remove this section
+      version: "2"  # Specify the version number or "$Latest"
+    # If you're not using a launch template, you can use this section instead:
+    #overrideBootstrapCommand: |
+    #   #!/bin/bash
+    #   /etc/eks/bootstrap.sh your-cluster-name --use-max-pods false --kubelet-extra-args '--max-pods=110'
