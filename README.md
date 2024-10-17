@@ -12,11 +12,10 @@ I wrote a simple front-end that can access some of the APIs provided by api-gate
 - Backend: dao layer, access and modify user data in mysql [finished]
 - Backend: auth service, login, register and list users [finished]
 - Backend: to be defined
-  
 - FrontEnd: login page [finished]
 - FrontEnd: dashboard page, display services and user list [finished]
 - FrontEnd: big task, use react or vue
-  
-- DevOps: deploy onto aws eks
+- DevOps: set up a k8s cluster on aws eks [finished]
+- DevOps: deploy front-end and backend onto aws eks
 - DevOps: continuous integration
 
