@@ -17,7 +17,7 @@ I wrote a simple front-end that can access some of the APIs provided by api-gate
 - FrontEnd: big task, use react or vue
 - DevOps: set up a k8s cluster on aws eks [finished]
 - DevOps: deploy front-end and backend onto aws eks
-  - deploy front-end [finished]
-  - learn aws and eks: IAM policy & role, ebs csi driver, etc
+  - deploy frontend [finished]
+  - deploy backend, currently learning aws and eks specific knowledge
 - DevOps: continuous integration
 
