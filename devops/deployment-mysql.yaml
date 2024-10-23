@@ -23,15 +23,15 @@ spec:
             secretKeyRef:
               name: secret-mysql
               key: mysql-root-password
-#        volumeMounts:
-#        - name: mysql-storage
-#          mountPath: /var/lib/mysql
-#        - name: mysql-config
-#          mountPath: /etc/mysql/conf.d
-#      volumes:
-#      - name: mysql-storage
-#        persistentVolumeClaim:
-#          claimName: pvc-mysql
-#      - name: mysql-config
-#        configMap:
-#          name: cm-mysql
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: pvc-mysql
+      - name: mysql-config
+        configMap:
+          name: cm-mysql
