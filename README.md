@@ -18,6 +18,9 @@ I wrote a simple front-end that can access some of the APIs provided by api-gate
 - DevOps: set up a k8s cluster on aws eks [finished]
 - DevOps: deploy front-end and backend onto aws eks
   - deploy frontend [finished]
-  - deploy backend, currently learning aws and eks specific knowledge
+  - deploy backend
+    - install ebs csi driver and deploy mysql as a service [finished]
+    - deploy redis
+    - deploy backend code
 - DevOps: continuous integration
 
