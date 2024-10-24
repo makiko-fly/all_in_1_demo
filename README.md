@@ -14,12 +14,14 @@ I wrote a simple front-end that can access some of the APIs provided by api-gate
 - Backend: to be defined
 - FrontEnd: login page [finished]
 - FrontEnd: dashboard page, display services and user list [finished]
+- FrontEnd: crypto futures monitor page [finished]
 - FrontEnd: big task, use react or vue
 - DevOps: set up a k8s cluster on aws eks [finished]
 - DevOps: deploy front-end and backend onto aws eks
   - deploy frontend [finished]
   - deploy backend
     - install ebs csi driver and deploy mysql as a service [finished]
+    - deploy clickhouse
     - deploy redis
     - deploy backend code
 - DevOps: continuous integration
