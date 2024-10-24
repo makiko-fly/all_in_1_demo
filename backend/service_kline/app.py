@@ -13,19 +13,20 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})  # This enables CORS for all routes
 
 LAST_RETURNED_DF_1 = None
+PREV_ACCESS_TIME = None
 @app.route('/crypto/24hr_stats', methods=['GET'])
 def crypto_24_hour_stats():
-    global LAST_RETURNED_DF_1
+    global LAST_RETURNED_DF_1, PREV_ACCESS_TIME
     ret_df = None
     if LAST_RETURNED_DF_1 is not None:
-        prev_close_time = dt.datetime.strptime(LAST_RETURNED_DF_1.iloc[0]['CloseTime'], "%Y-%m-%d %H:%M:%S")
         cache_seconds = 120
-        if (dt.datetime.now() - prev_close_time).seconds < cache_seconds:
+        if (dt.datetime.now() - PREV_ACCESS_TIME).seconds < cache_seconds:
             print(f'less than {cache_seconds} seconds passed, use old df')
             ret_df = LAST_RETURNED_DF_1
     if ret_df is None:
         ret_df = scanner.get_latest_snapshot()
         LAST_RETURNED_DF_1 = ret_df
+        PREV_ACCESS_TIME = dt.datetime.now()
     return ret_df.to_json(orient='records'), 200
 
 
@@ -36,4 +37,5 @@ def health_check():
 
 
 if __name__ == '__main__':
+    print('=====')
     app.run(host='0.0.0.0', port=8080)
