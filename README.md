@@ -11,6 +11,8 @@ I wrote a simple front-end that can access some of the APIs provided by api-gate
 - Backend: service discovery, list microservice status [finished]
 - Backend: dao layer, access and modify user data in mysql [finished]
 - Backend: auth service, login, register and list users [finished]
+- Backend: service_kline, websocket client for binance futures api [finished]
+- Backend: service_kline, clickhouse manager [finished]
 - Backend: to be defined
 - FrontEnd: login page [finished]
 - FrontEnd: dashboard page, display services and user list [finished]
