@@ -36,7 +36,8 @@ class WebSocketManager:
         try:
             if not isinstance(message, str):
                 raise Exception(f'message is not a str: {message}')
-            return
+
+            message = json.loads(message)
 
             if 'e' in message:
                 event_type = message['e']
