@@ -6,13 +6,12 @@ import platform
 from datetime import datetime
 import json
 import threading
-from clickhouse_mgr import ClickHouseManager
+from loguru import logger
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+
+from common_redis_stream_mgr import RedisStreamManager
+redis_stream = RedisStreamManager(max_size=2000)
+logger.info(f'== current redis status: {redis_stream.get_stream_info()}')
 
 
 class WebSocketManager:
@@ -24,13 +23,6 @@ class WebSocketManager:
         self.reconnect_delay = 5  # seconds
         self.last_connected_at = None
         self.connection_timeout = 24 * 60 * 60  # 24 hours in seconds
-
-        self.clickhouse = ClickHouseManager(
-            batch_size=100,  # Adjust based on your needs
-            flush_interval=5,  # Flush every 60 seconds
-            max_retries=3,  # Maximum retry attempts
-            retry_delay=5  # Seconds between retries
-        )
 
     def message_handler(self, _, message):
         try:
@@ -54,9 +46,11 @@ class WebSocketManager:
                     print(f"末个成交ID: {message['l']}")
                     print(f"成交时间: {datetime.fromtimestamp(message['T'] / 1000)}")
                     print(f"是否为主动卖出: {message['m']}")
+
                     # from latest documentation: ignore 'M'
                     # print(f"是否为交易市场最优价格: {message.get('M', 'N/A')}")
-                    self.clickhouse.insert_trade(message)
+                    # self.clickhouse.insert_trade(message)
+                    redis_stream.produce_trade(message)
 
                 elif event_type == 'markPriceUpdate':
                     print("\n===== 标记价格更新 =====")
@@ -344,9 +338,8 @@ class WebSocketManager:
         self.is_running = False
         if self.ws_client:
             self.ws_client.stop()
+        redis_stream.cleanup()
         logger.info("WebSocket connection stopped")
-        logger.info('shutting down click house manager')
-        self.clickhouse.shutdown()
 
 def main():
     ws_manager = WebSocketManager()
