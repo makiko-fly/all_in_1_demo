@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24-Hour Futures Stats</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.8em;
+        }
+
+        .update-info {
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background-color: #45a049;
+        }
+
+        .price-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-size: 0.9em;
+            table-layout: fixed;
+            margin-bottom: 20px;
+        }
+
+        .price-table th, .price-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .price-table th:nth-child(1) { width: 12%; }  /* Symbol */
+        .price-table th:nth-child(2) { width: 9%; }   /* Last Price */
+        .price-table th:nth-child(3) { width: 8%; }   /* Return */
+        .price-table th:nth-child(4) { width: 9%; }   /* VWAP */
+        .price-table th:nth-child(5) { width: 9%; }   /* Open */
+        .price-table th:nth-child(6) { width: 8%; }   /* High */
+        .price-table th:nth-child(7) { width: 8%; }   /* Low */
+        .price-table th:nth-child(8) { width: 12%; }  /* Amount */
+        .price-table th:nth-child(9) { width: 12%; }  /* Open Time */
+        .price-table th:nth-child(10) { width: 12%; } /* Close Time */
+
+        .price-table th {
+            background-color: #4CAF50;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            padding: 12px 8px;
+        }
+
+        .price-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .price-table tbody tr:hover {
+            background-color: #f5f5f5;
+            transition: background-color 0.2s ease;
+        }
+
+        .price-table td {
+            font-size: 0.95em;
+        }
+
+        .positive {
+            color: #4CAF50;
+            font-weight: 500;
+        }
+
+        .negative {
+            color: #f44336;
+            font-weight: 500;
+        }
+
+        .symbol {
+            font-weight: 600;
+            color: #2196F3;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        #loading-prices {
+            display: none;
+            color: #4CAF50;
+            text-align: center;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        #error-message-prices {
+            display: none;
+            color: #f44336;
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 4px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            gap: 20px;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .pagination-button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .pagination-button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+
+        .pagination-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .pagination-info {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .price-table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .price-table th, .price-table td {
+                min-width: 100px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .title-section {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .update-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .pagination {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .pagination-controls {
+                justify-content: center;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title-section">
+                <h1>24-Hour Futures Stats</h1>
+                <div class="update-info">
+                    <span id="lastUpdate"></span> |
+                    <span class="refresh-countdown"></span>
+                </div>
+            </div>
+            <a href="crypto_agg_trades.html" class="nav-link">BTCUSDT Tick Level Trades</a>
+        </div>
+
+        <div id="loading-prices">Loading...</div>
+        <div id="error-message-prices"></div>
+
+        <table class="price-table">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Last Price</th>
+                    <th>Ret (%)</th>
+                    <th>VWAP</th>
+                    <th>Open</th>
+                    <th>High</th>
+                    <th>Low</th>
+                    <th>Amount (USDT)</th>
+                    <th>Open Time</th>
+                    <th>Close Time</th>
+                </tr>
+            </thead>
+            <tbody id="priceTableBody"></tbody>
+        </table>
+
+        <div class="pagination">
+            <div class="pagination-controls">
+                <button id="prevPage" class="pagination-button">Previous</button>
+                <span class="pagination-info">Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+                <button id="nextPage" class="pagination-button">Next</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const currentDomain = window.location.hostname;
+        const BASE_DOMAIN = 'http://18.142.2.45:8080'
+        const refreshInterval = 30;
+        let countdownInterval;
+        let currentData = [];
+        let currentPage = 1;
+        let pageSize = 20;
+
+        function formatDateTime(date) {
+            return date.toLocaleString('en-US', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZone: 'Asia/Shanghai'
+            });
+        }
+
+        function force_formatDateTime(date) {
+            // Add 8 hours to convert to UTC+8
+            const utc8Date = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+
+            // Format as MM-DD HH:mm:ss
+            const month = (utc8Date.getUTCMonth() + 1).toString().padStart(2, '0');
+            const day = utc8Date.getUTCDate().toString().padStart(2, '0');
+            const hours = utc8Date.getUTCHours().toString().padStart(2, '0');
+            const minutes = utc8Date.getUTCMinutes().toString().padStart(2, '0');
+            const seconds = utc8Date.getUTCSeconds().toString().padStart(2, '0');
+
+            return `${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+
+        function formatNumber(num, decimals = 2) {
+            return new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            }).format(num);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message-prices');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function updatePaginationControls() {
+            const totalPages = Math.ceil(currentData.length / pageSize);
+            document.getElementById('currentPage').textContent = currentPage;
+            document.getElementById('totalPages').textContent = totalPages;
+            document.getElementById('prevPage').disabled = currentPage === 1;
+            document.getElementById('nextPage').disabled = currentPage === totalPages;
+        }
+
+        function updatePriceTable(data) {
+            currentData = Array.isArray(data) ? data : [data];
+            const tbody = document.getElementById('priceTableBody');
+            tbody.innerHTML = '';
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = currentData.slice(start, end);
+
+            pageData.forEach(item => {
+                const returnValue = parseFloat(item.Ret);
+                const returnClass = returnValue >= 0 ? 'positive' : 'negative';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="symbol">${item.Symbol}</td>
+                    <td>${formatNumber(item.LastPrice)}</td>
+                    <td class="${returnClass}">${formatNumber(returnValue, 3)}</td>
+                    <td>${formatNumber(parseFloat(item.VWAP))}</td>
+                    <td>${formatNumber(parseFloat(item.Open))}</td>
+                    <td>${formatNumber(item.High)}</td>
+                    <td>${formatNumber(item.Low)}</td>
+                    <td>${formatNumber(item.Amt, 0)}</td>
+                    <td class="timestamp">${formatDateTime(new Date(item.OpenTime + 'Z'))}</td>
+                    <td class="timestamp">${formatDateTime(new Date(item.CloseTime + 'Z'))}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.getElementById('lastUpdate').textContent =
+                `Last updated: ${formatDateTime(new Date())} (UTC+8)`;
+
+            updatePaginationControls();
+        }
+
+        function startCountdown() {
+            let secondsLeft = refreshInterval;
+            const countdownEl = document.querySelector('.refresh-countdown');
+
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            function updateCountdown() {
+                countdownEl.textContent = `Refresh in ${secondsLeft}s`;
+                secondsLeft--;
+
+                if (secondsLeft < 0) {
+                    secondsLeft = refreshInterval;
+                }
+            }
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        function showLoadingPrices() {
+            const loading = document.getElementById('loading-prices');
+            loading.style.display = 'block';
+            setTimeout(() => {
+                loading.style.display = 'none';
+            }, 1000);
+        }
+
+        async function fetchPriceData() {
+            try {
+                showLoadingPrices();
+                const response = await fetch(`${BASE_DOMAIN}/crypto/24hr_stats`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                updatePriceTable(data);
+                startCountdown();
+            } catch (error) {
+                console.error('Error fetching price data:', error);
+                showError(`Failed to fetch price data: ${error.message}`);
+            }
+        }
+
+        document.getElementById('prevPage').addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                updatePriceTable(currentData);
+            }
+        });
+
+        document.getElementById('nextPage').addEventListener('click', () => {
+            const totalPages = Math.ceil(currentData.length / pageSize);
+            if (currentPage < totalPages) {
+                currentPage++;
+                updatePriceTable(currentData);
+            }
+        });
+
+        fetchPriceData();
+        setInterval(fetchPriceData, refreshInterval * 1000);
+    </script>
+</body>
+</html>

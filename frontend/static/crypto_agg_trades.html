@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tick Level Trades (BTCUSDT)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: baseline;
+            gap: 20px;
+        }
+
+        .status-info {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .nav-link:hover {
+            background-color: #45a049;
+        }
+
+        .trades-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-size: 0.9em;
+            table-layout: fixed;
+        }
+
+        .trades-table th, .trades-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Column widths */
+        .trades-table th:nth-child(1) { width: 6%; }  /* Event Type */
+        .trades-table th:nth-child(2) { width: 14%; } /* Event Time */
+        .trades-table th:nth-child(3) { width: 8%; }  /* Symbol */
+        .trades-table th:nth-child(4) { width: 10%; } /* Agg Trade ID */
+        .trades-table th:nth-child(5) { width: 8%; }  /* Price */
+        .trades-table th:nth-child(6) { width: 8%; }  /* Quantity */
+        .trades-table th:nth-child(7) { width: 10%; } /* First Trade ID */
+        .trades-table th:nth-child(8) { width: 8%; } /* Last Trade ID */
+        .trades-table th:nth-child(9) { width: 14%; } /* Trade Time */
+        .trades-table th:nth-child(10) { width: 8%; } /* Is Buyer Maker */
+
+        .trades-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .trades-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .buyer-maker-true {
+            color: #4CAF50;
+        }
+
+        .buyer-maker-false {
+            color: #f44336;
+        }
+
+        .pagination {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .pagination button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .loading {
+            display: none;
+            color: #2196F3;
+        }
+
+        .error {
+            color: #f44336;
+        }
+
+        @media (max-width: 768px) {
+            .trades-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title-section">
+                <h1>Tick Level Trades (BTCUSDT)</h1>
+                <span class="status-info">
+                    <span class="last-update"></span> |
+                    <span class="refresh-countdown"></span>
+                </span>
+            </div>
+            <a href="crypto_24h_stats.html" class="nav-link">24H Futures Stats</a>
+        </div>
+
+        <table id="tradesTable" class="trades-table">
+            <thead>
+                <tr>
+                    <th>Event Type</th>
+                    <th>Event Time</th>
+                    <th>Symbol</th>
+                    <th>Agg Trade ID</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>First Trade ID</th>
+                    <th>Last Trade ID</th>
+                    <th>Trade Time</th>
+                    <th>Is Buyer Maker</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <div class="pagination">
+            <button class="prev-btn" onclick="changePage(-1)">Previous</button>
+            <span>Page <span class="current-page">1</span></span>
+            <button class="next-btn" onclick="changePage(1)">Next</button>
+        </div>
+
+        <div class="status">
+            <span class="loading">Loading...</span>
+            <span class="error"></span>
+        </div>
+    </div>
+
+    <script>
+        const currentDomain = window.location.hostname;
+<!--        const BASE_DOMAIN = currentDomain.includes('127.0.0.1')-->
+<!--            ? 'http://127.0.0.1:8080'-->
+<!--            : 'http://18.142.2.45:8080';-->
+
+        const BASE_DOMAIN = 'http://18.142.2.45:8080';
+
+        let currentPage = 1;
+        let allData = [];
+        const itemsPerPage = 20;
+        let autoRefreshInterval;
+        let countdownInterval;
+        const refreshInterval = 10;
+
+        function formatDateTime(date) {
+            return date.toLocaleString('en-US', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZone: 'Asia/Shanghai'
+            }) + ' (UTC+8)';
+        }
+
+        function convertToUTC8(dateStr) {
+            const date = new Date(dateStr);
+            return formatDateTime(date);
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(allData.length / itemsPerPage);
+            document.querySelector('.current-page').textContent = currentPage;
+            document.querySelector('.prev-btn').disabled = currentPage === 1;
+            document.querySelector('.next-btn').disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        function updateTable() {
+            const tbody = document.querySelector('#tradesTable tbody');
+            tbody.innerHTML = '';
+
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageData = allData.slice(start, end);
+
+            pageData.forEach(trade => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${trade.event_type}</td>
+                    <td>${convertToUTC8(trade.event_time)}</td>
+                    <td>${trade.symbol}</td>
+                    <td>${trade.agg_trade_id}</td>
+                    <td>${trade.price.toFixed(2)}</td>
+                    <td>${trade.quantity}</td>
+                    <td>${trade.first_trade_id}</td>
+                    <td>${trade.last_trade_id}</td>
+                    <td>${convertToUTC8(trade.trade_time)}</td>
+                    <td class="buyer-maker-${trade.is_buyer_maker}">
+                        ${trade.is_buyer_maker}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.querySelector('.last-update').textContent =
+                `Last updated: ${formatDateTime(new Date())}`;
+
+            updatePagination();
+        }
+
+        function startCountdown() {
+            let secondsLeft = refreshInterval;
+            const countdownEl = document.querySelector('.refresh-countdown');
+
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            function updateCountdown() {
+                countdownEl.textContent = `Refresh in ${secondsLeft}s`;
+                secondsLeft--;
+
+                if (secondsLeft < 0) {
+                    secondsLeft = refreshInterval;
+                }
+            }
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        }
+
+        function changePage(delta) {
+            const totalPages = Math.ceil(allData.length / itemsPerPage);
+            const newPage = currentPage + delta;
+
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                updateTable();
+            }
+        }
+
+        async function fetchTradesData() {
+            const loadingEl = document.querySelector('.loading');
+            const errorEl = document.querySelector('.error');
+
+            loadingEl.style.display = 'inline';
+            errorEl.textContent = '';
+
+            try {
+                const response = await fetch(`${BASE_DOMAIN}/crypto/latest_agg_trades`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                allData = await response.json();
+                updateTable();
+                startCountdown();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                errorEl.textContent = `Error: ${error.message}`;
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        // Initial setup
+        fetchTradesData();
+
+        // Set up interval
+        autoRefreshInterval = setInterval(fetchTradesData, refreshInterval * 1000);
+    </script>
+</body>
+</html>
