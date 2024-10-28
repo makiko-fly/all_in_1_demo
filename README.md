@@ -13,11 +13,13 @@ I wrote a simple front-end that can access some of the APIs provided by api-gate
 - Backend: auth service, login, register and list users [finished]
 - Backend: service_kline, websocket client for binance futures api [finished]
 - Backend: service_kline, clickhouse manager [finished]
-- Backend: to be defined
+- Backend: service_kline, redis stream manager [finished]
+- Backend: to be defined...
 - FrontEnd: login page [finished]
 - FrontEnd: dashboard page, display services and user list [finished]
-- FrontEnd: crypto futures monitor page [finished]
-- FrontEnd: big task, use react or vue
+- FrontEnd: crypto futures 24H stats page [finished]
+- FrontEnd: crypto futures tick level trades page [finished]
+- FrontEnd: big task, use react or vue...
 - DevOps: set up a k8s cluster on aws eks [finished]
 - DevOps: deploy front-end and backend onto aws eks
   - deploy frontend [finished]
