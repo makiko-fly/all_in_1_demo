@@ -10,15 +10,17 @@ from common_clickhouse import ClickHouseReader
 
 app = Flask(__name__)
 
-# Only use the Flask-CORS extension configuration
-CORS(app, resources={
-    r"/*": {
-        "origins": ["http://127.0.0.1", "http://localhost", "http://127.0.0.1:5500"],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
-        "supports_credentials": True
-    }
-})
+CORS(app, resources={r"/*": {"origins": "*"}})  # This enables CORS for all routes
+
+# # Only use the Flask-CORS extension configuration
+# CORS(app, resources={
+#     r"/*": {
+#         "origins": ["http://127.0.0.1", "http://localhost", "http://127.0.0.1:5500"],
+#         "methods": ["GET", "POST", "OPTIONS"],
+#         "allow_headers": ["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
+#         "supports_credentials": True
+#     }
+# })
 
 cache_store = {}
 
