@@ -14,7 +14,7 @@ redis_manager = RedisStreamManager(
     host='localhost',  # Update with your Redis host
     port=6379,  # Update with your Redis port
     stream_name='trades',
-    max_size=10000
+    max_size=1000
 )
 
 cache_store = {}
@@ -71,21 +71,33 @@ def crypto_24_hour_stats():
 @cache(seconds=8)
 def latest_agg_trades():
     try:
-        # Get trades from Redis Stream
-        trades_batches = redis_manager.consume_trades(batch_size=100, timeout=1000)
+        # Get the last ID from the stream
+        stream_info = redis_manager.get_stream_info()
+        last_id = stream_info.get('last-generated-id', '0-0')
 
-        if not trades_batches:
-            return jsonify([]), 200  # Return empty array if no trades
+        # Calculate the ID approximately 100 messages back
+        # This assumes messages have monotonically increasing IDs
+        timestamp, sequence = last_id.split('-')
+        timestamp = int(timestamp)
+        sequence = int(sequence)
 
-        # Process the trades from Redis
-        all_trades = []
-        for trades_batch, message_ids in trades_batches:
-            formatted_trades = [format_trade(trade) for trade in trades_batch]
-            all_trades.extend(formatted_trades)
-            # Acknowledge the processed messages
-            redis_manager.ack_messages(message_ids)
+        # Get latest 100 messages
+        trades = redis_manager.read_latest_n(n=100)
 
-        return jsonify(all_trades), 200
+        if not trades:
+            return jsonify([]), 200
+
+        # Format the trades
+        formatted_trades = []
+        for trade in trades:
+            try:
+                formatted_trade = format_trade(trade)
+                formatted_trades.append(formatted_trade)
+            except (KeyError, ValueError) as e:
+                print(f"Error formatting trade: {e}")
+                continue
+
+        return jsonify(formatted_trades), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
