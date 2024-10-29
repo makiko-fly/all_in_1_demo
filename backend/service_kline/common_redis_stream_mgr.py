@@ -73,6 +73,8 @@ class RedisStreamManager:
             # Get the last ID
             stream_info = self.redis_client.xinfo_stream(self.stream_name)
             last_id = stream_info.get('last-generated-id', '0-0')
+            print(f'stream_info: {stream_info}')
+            print(f'last_id: {last_id}')
 
             # Read the latest n messages
             messages = self.redis_client.xrevrange(
@@ -82,14 +84,13 @@ class RedisStreamManager:
                 count=n
             )
 
+            print(f'message: {messages}')
+
             # Extract and return only the trade data
             trades = []
             for msg_id, msg_data in messages:
-                # Assuming the trade data is stored in a field called 'trade'
-                if b'trade' in msg_data:
-                    trade_str = msg_data[b'trade'].decode('utf-8')
-                    trade = eval(trade_str)  # Convert string representation back to dict
-                    trades.append(trade)
+                trade_data = json.loads(msg_data['data'])
+                trades.append(trade_data)
 
             return trades
 

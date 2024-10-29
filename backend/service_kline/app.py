@@ -71,16 +71,6 @@ def crypto_24_hour_stats():
 @cache(seconds=8)
 def latest_agg_trades():
     try:
-        # Get the last ID from the stream
-        stream_info = redis_manager.get_stream_info()
-        last_id = stream_info.get('last-generated-id', '0-0')
-
-        # Calculate the ID approximately 100 messages back
-        # This assumes messages have monotonically increasing IDs
-        timestamp, sequence = last_id.split('-')
-        timestamp = int(timestamp)
-        sequence = int(sequence)
-
         # Get latest 100 messages
         trades = redis_manager.read_latest_n(n=100)
 
