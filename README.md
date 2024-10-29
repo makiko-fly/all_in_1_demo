@@ -4,7 +4,8 @@
 
 This is a demo project illustrating the design of microservices, containerization using docker, and deployment in k8s.
 
-I wrote a simple front-end that can access some of the APIs provided by api-gateway, display the data so that viewers can have a better understanding of the project.
+k8s dashboard: https://k8s-dashboard.chenfei-demo.com/
+crypto page: https://crypto-web.chenfei-demo.com/static/crypto_24h_stats.html
 
 
 ## Feature List
@@ -17,10 +18,10 @@ I wrote a simple front-end that can access some of the APIs provided by api-gate
   - service_kline, redis stream manager [finished]
 - FrontEnd:
   - login page [finished]
-  - FrontEnd: dashboard page, display services and user list [finished]
-  - FrontEnd: crypto futures 24H stats page [finished]
-  - FrontEnd: crypto futures tick level trades page [finished]
-  - FrontEnd: big task, use react or vue...
+  - dashboard page, display services and user list [finished]
+  - crypto futures 24H stats page [finished]
+  - crypto futures tick level trades page [finished]
+  - big task, use react or vue...
 - DevOps:
   - set up a k8s cluster on aws eks [finished]
   - deploy frontend code [finished]
