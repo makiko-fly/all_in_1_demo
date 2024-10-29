@@ -59,6 +59,44 @@ class RedisStreamManager:
             logger.error(f"Error producing trade: {e}")
             raise
 
+    def read_latest_n(self, n=100):
+        """
+        Read the latest n records from the Redis stream
+
+        Args:
+            n (int): Number of records to read (default: 100)
+
+        Returns:
+            list: List of the latest n trades
+        """
+        try:
+            # Get the last ID
+            stream_info = self.redis_client.xinfo_stream(self.stream_name)
+            last_id = stream_info.get('last-generated-id', '0-0')
+
+            # Read the latest n messages
+            messages = self.redis_client.xrevrange(
+                self.stream_name,
+                max=last_id,
+                min='-',
+                count=n
+            )
+
+            # Extract and return only the trade data
+            trades = []
+            for msg_id, msg_data in messages:
+                # Assuming the trade data is stored in a field called 'trade'
+                if b'trade' in msg_data:
+                    trade_str = msg_data[b'trade'].decode('utf-8')
+                    trade = eval(trade_str)  # Convert string representation back to dict
+                    trades.append(trade)
+
+            return trades
+
+        except Exception as e:
+            print(f"Error reading from Redis stream: {e}")
+            return []
+
     def consume_trades(self, batch_size=100, timeout=1000) -> List[Tuple[List[Dict], List[str]]]:
         """
         Consume trades from Redis Stream
