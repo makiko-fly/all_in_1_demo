@@ -82,8 +82,6 @@ class RedisStreamManager:
                 count=n
             )
 
-            print(f'message: {messages}')
-
             # Extract and return only the trade data
             trades = []
             for msg_id, msg_data in messages:
