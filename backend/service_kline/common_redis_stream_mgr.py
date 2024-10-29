@@ -73,8 +73,6 @@ class RedisStreamManager:
             # Get the last ID
             stream_info = self.redis_client.xinfo_stream(self.stream_name)
             last_id = stream_info.get('last-generated-id', '0-0')
-            print(f'stream_info: {stream_info}')
-            print(f'last_id: {last_id}')
 
             # Read the latest n messages
             messages = self.redis_client.xrevrange(
