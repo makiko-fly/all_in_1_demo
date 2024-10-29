@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp-kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      k8s-app: kubernetes-dashboard
+  template:
+    metadata:
+      labels:
+        k8s-app: kubernetes-dashboard
+    spec:
+      containers:
+      - name: kubernetes-dashboard
+        image: kubernetesui/dashboard:v2.7.0
+        args:
+        - --namespace=kubernetes-dashboard
+        - --auto-generate-certificates
+        - --tls-cert-file=/certs/tls.crt
+        - --tls-key-file=/certs/tls.key
+        ports:
+        - containerPort: 8443
+          protocol: TCP
+        volumeMounts:
+        - name: kubernetes-dashboard-certs
+          mountPath: /certs
+        - name: kubernetes-dashboard-csrf
+          mountPath: /tmp/csrf
+        - name: kubernetes-dashboard-key-holder
+          mountPath: /tmp/key-holder
+      serviceAccountName: readonly-user
+      volumes:
+      - name: kubernetes-dashboard-certs
+        secret:
+          secretName: dashboard-tls
+      - name: kubernetes-dashboard-csrf
+        secret:
+          secretName: kubernetes-dashboard-csrf
+      - name: kubernetes-dashboard-key-holder
+        secret:
+          secretName: kubernetes-dashboard-key-holder

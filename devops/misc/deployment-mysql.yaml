@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deployment-mysql
+  labels:
+    app: app-mysql
 spec:
   replicas: 1
   selector:
@@ -35,3 +37,16 @@ spec:
       - name: mysql-config
         configMap:
           name: cm-mysql
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+spec:
+  selector:
+    app: app-mysql
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+  type: ClusterIP
