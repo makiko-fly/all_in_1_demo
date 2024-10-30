@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-proxy-server
+  namespace: default  # adjust namespace as needed
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    external-dns.alpha.kubernetes.io/alias: "true"
+    external-dns.alpha.kubernetes.io/hostname: proxy-server.chenfei-demo.com
+    external-dns.alpha.kubernetes.io/ttl: "60"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"  # Changed to HTTP since proxy server likely uses HTTP
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: proxy-server.chenfei-demo.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: svc-proxy-server
+            port:
+              number: 80  # Changed to 80 for HTTP
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - proxy-server.chenfei-demo.com
+    secretName: proxy-server-tls

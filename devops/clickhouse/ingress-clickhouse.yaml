@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-clickhouse
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: clickhouse.chenfei-demo.com
+    external-dns.alpha.kubernetes.io/ttl: "60"
+    external-dns.alpha.kubernetes.io/alias: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - clickhouse.chenfei-demo.com
+    secretName: clickhouse-markets-tls
+  rules:
+  - host: clickhouse.chenfei-demo.com
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: clickhouse-chi-markets
+              port:
+                number: 8123

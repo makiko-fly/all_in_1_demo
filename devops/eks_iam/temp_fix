@@ -1,0 +1,14 @@
+# Create proper IRSA for EBS CSI
+eksctl create iamserviceaccount \
+  --name ebs-csi-controller-sa \
+  --namespace kube-system \
+  --cluster my-minimal-cluster \
+  --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+  --approve \
+  --override-existing-serviceaccounts
+
+# Restart the CSI controller to pick up new credentials
+kubectl rollout restart deployment ebs-csi-controller -n kube-system
+
+# Watch the rollout
+kubectl rollout status deployment ebs-csi-controller -n kube-system

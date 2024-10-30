@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-crypto-web
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: crypto-web.chenfei-demo.com
+    external-dns.alpha.kubernetes.io/ttl: "60"
+    external-dns.alpha.kubernetes.io/alias: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - crypto-web.chenfei-demo.com
+    secretName: crypto-web-tls
+  rules:
+  - host: crypto-web.chenfei-demo.com
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: front-end-sample-1-service
+              port:
+                number: 80

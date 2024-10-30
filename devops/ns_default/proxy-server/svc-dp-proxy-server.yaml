@@ -1,0 +1,35 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp-proxy-server
+  labels:
+    app: cf-proxy-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cf-proxy-server
+  template:
+    metadata:
+      labels:
+        app: cf-proxy-server
+    spec:
+      containers:
+      - name: cf-proxy-server
+        image: chenfei1987/proxy-server:v0.1
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-proxy-server
+spec:
+  selector:
+    app: cf-proxy-server
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5000
+  type: ClusterIP
