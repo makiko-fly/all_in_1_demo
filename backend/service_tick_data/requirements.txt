@@ -1,0 +1,8 @@
+Flask==3.0.3
+flask-cors==5.0.0
+loguru==0.7.2
+pandas==2.0.3
+numpy==1.26.0               # has to specify this or pandas will have version conflict
+websocket-client==1.8.0
+redis==5.1.1
+clickhouse-driver==0.2.9
