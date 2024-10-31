@@ -50,10 +50,23 @@ def cache(seconds=5):
 
 @app.route('/cn_stock/book', methods=['GET'])
 @cache(seconds=4)
-def latest_agg_trades():
-    book_records = ch_mgr.get_latest_cn_stock_book(20)
-    records = book_records.to_dict('records')
+def cn_stock_book():
+    book_records_df = ch_mgr.get_latest_cn_stock_book(20)
+    book_records = book_records_df.to_dict('records')
+
+    stat_records_df = ch_mgr.get_data_distribution()
+    stat_records = stat_records_df.to_dict('records')
+    ret_obj = {'book': book_records, 'stat': stat_records}
+    return jsonify(ret_obj), 200, {'Content-Type': 'application/json'}
+
+
+@app.route('/cn_stock/ch_stats', methods=['GET'])
+@cache(seconds=4)
+def cn_stock_ch_stats():
+    records = ch_mgr.get_data_distribution()
+    records = records.to_dict('records')
     return jsonify(records), 200, {'Content-Type': 'application/json'}
+
 
 @app.route('/health', methods=['GET'])
 def health_check():

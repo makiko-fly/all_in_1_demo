@@ -406,7 +406,7 @@ class ClickHouseMgr:
         """
         return self.execute_df(query)
 
-    def get_data_distribution(self) -> List:
+    def get_data_distribution(self):
         """
         Get data distribution across servers
         """
@@ -420,4 +420,4 @@ class ClickHouseMgr:
         GROUP BY hostname()
         ORDER BY server
         """
-        return self.execute(query)
+        return self.execute_df(query)

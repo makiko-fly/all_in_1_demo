@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinese Stock Order Book</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: baseline;
+            gap: 20px;
+        }
+
+        .status-info {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .order-book {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .book-side {
+            flex: 1;
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .book-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        .book-table th, .book-table td {
+            padding: 8px;
+            text-align: right;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .book-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .asks th {
+            background-color: #f44336;
+        }
+
+        .symbol-info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .symbol-info div {
+            margin: 5px 0;
+        }
+
+        .error {
+            color: #f44336;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .order-book {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title-section">
+                <h1>Chinese Stock Order Book</h1>
+                <span class="status-info">
+                    <span class="last-update"></span>
+                </span>
+            </div>
+        </div>
+
+        <div class="symbol-info">
+            <div><strong>Symbol:</strong> <span id="symbol"></span></div>
+            <div><strong>Last Update:</strong> <span id="timestamp"></span></div>
+            <div><strong>Host:</strong> <span id="hostname"></span></div>
+        </div>
+
+        <div class="order-book">
+            <div class="book-side">
+                <table class="book-table asks">
+                    <thead>
+                        <tr>
+                            <th>Price</th>
+                            <th>Size</th>
+                            <th>Level</th>
+                        </tr>
+                    </thead>
+                    <tbody id="asksBody"></tbody>
+                </table>
+            </div>
+            <div class="book-side">
+                <table class="book-table bids">
+                    <thead>
+                        <tr>
+                            <th>Price</th>
+                            <th>Size</th>
+                            <th>Level</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bidsBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="error"></div>
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+        const refreshInterval = 1; // 1 second refresh
+
+        function formatDateTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                fractionalSecondDigits: 3,
+                hour12: false,
+                timeZone: 'Asia/Shanghai'
+            }) + ' (UTC+8)';
+        }
+
+        function updateOrderBook(data) {
+            // Update symbol info
+            document.getElementById('symbol').textContent = data.Symbol;
+            document.getElementById('timestamp').textContent = formatDateTime(data.LongTimestamp);
+            document.getElementById('hostname').textContent = data.HostName;
+
+            // Update asks
+            const asksBody = document.getElementById('asksBody');
+            asksBody.innerHTML = '';
+            for (let i = 5; i >= 1; i--) {
+                if (data[`AskPrice${i}`] > 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data[`AskPrice${i}`].toFixed(2)}</td>
+                        <td>${data[`AskSize${i}`].toFixed(0)}</td>
+                        <td>${i}</td>
+                    `;
+                    asksBody.appendChild(row);
+                }
+            }
+
+            // Update bids
+            const bidsBody = document.getElementById('bidsBody');
+            bidsBody.innerHTML = '';
+            for (let i = 1; i <= 5; i++) {
+                if (data[`BidPrice${i}`] > 0) {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${data[`BidPrice${i}`].toFixed(2)}</td>
+                        <td>${data[`BidSize${i}`].toFixed(0)}</td>
+                        <td>${i}</td>
+                    `;
+                    bidsBody.appendChild(row);
+                }
+            }
+
+            document.querySelector('.last-update').textContent =
+                `Last updated: ${formatDateTime(Date.now())}`;
+        }
+
+        async function fetchOrderBook() {
+            const errorEl = document.querySelector('.error');
+            errorEl.textContent = '';
+
+            try {
+                const response = await fetch('https://mkt-data-server.chenfei-demo.com/cn_stock/book');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                updateOrderBook(data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                errorEl.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // Initial fetch
+        fetchOrderBook();
+
+        // Set up auto-refresh
+        autoRefreshInterval = setInterval(fetchOrderBook, refreshInterval * 1000);
+    </script>
+</body>
+</html>

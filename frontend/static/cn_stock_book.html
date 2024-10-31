@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinese Stock Book</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .title-section {
+            display: flex;
+            align-items: baseline;
+            gap: 20px;
+        }
+
+        .status-info {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .book-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-size: 0.9em;
+            table-layout: fixed;
+        }
+
+        .book-table th, .book-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .book-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .book-table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        /* Column widths */
+        .book-table th:nth-child(1) { width: 8%; }   /* Symbol */
+        .book-table th:nth-child(2) { width: 15%; }  /* DateTime */
+        .book-table th:nth-child(3) { width: 7%; }   /* Bid Price */
+        .book-table th:nth-child(4) { width: 7%; }   /* Bid Size */
+        .book-table th:nth-child(5) { width: 7%; }   /* Ask Price */
+        .book-table th:nth-child(6) { width: 7%; }   /* Ask Size */
+        .book-table th:nth-child(7) { width: 15%; }  /* Hostname */
+        .book-table th:nth-child(8) { width: 15%; }  /* Read From */
+
+        .status {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .loading {
+            display: none;
+            color: #2196F3;
+        }
+
+        .error {
+            color: #f44336;
+        }
+
+        @media (max-width: 768px) {
+            .book-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title-section">
+                <h1>Chinese Stock Book</h1>
+                <span class="status-info">
+                    <span class="last-update"></span>
+                    <span class="refresh-countdown"></span>
+                </span>
+            </div>
+        </div>
+
+        <table class="book-table">
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>DateTime</th>
+                    <th>Bid Size1</th>
+                    <th>Bid Price1</th>
+                    <th>Ask Price1</th>
+                    <th>Ask Size1</th>
+                    <th>Inserted From</th>
+                    <th>Read From</th>
+                </tr>
+            </thead>
+            <tbody id="bookBody"></tbody>
+        </table>
+
+        <div class="status">
+            <span class="loading">Loading...</span>
+            <span class="error"></span>
+        </div>
+    </div>
+
+    <script>
+        let autoRefreshInterval;
+        let countdownInterval;
+        const REFRESH_INTERVAL = 10;
+
+        function formatDateTime(timestamp) {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                fractionalSecondDigits: 3,
+                hour12: false,
+                timeZone: 'Asia/Shanghai'
+            });
+        }
+
+        function formatNumber(number) {
+            if (number === undefined || number === null || isNaN(number)) {
+                return '-';
+            }
+            return number.toString();
+        }
+
+        function updateCountdown(secondsLeft) {
+            const countdownEl = document.querySelector('.refresh-countdown');
+            if (countdownEl) {
+                countdownEl.textContent = ` (Refresh in ${secondsLeft}s)`;
+            }
+        }
+
+        function startCountdown() {
+            let secondsLeft = REFRESH_INTERVAL;
+            updateCountdown(secondsLeft);
+
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            countdownInterval = setInterval(() => {
+                secondsLeft -= 1;
+                updateCountdown(secondsLeft);
+                if (secondsLeft <= 0) {
+                    secondsLeft = REFRESH_INTERVAL;
+                }
+            }, 1000);
+        }
+
+        function updateTable(dataList) {
+            const tbody = document.getElementById('bookBody');
+            tbody.innerHTML = '';
+
+            dataList.forEach(data => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${data.Symbol || '-'}</td>
+                    <td>${formatDateTime(data.LongTimestamp)}</td>
+                    <td>${formatNumber(data.BidSize1)}</td>
+                    <td>${formatNumber(data.BidPrice1)}</td>
+                    <td>${formatNumber(data.AskPrice1)}</td>
+                    <td>${formatNumber(data.AskSize1)}</td>
+                    <td>${data.HostName || '-'}</td>
+                    <td>${data.ReadFrom || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            const lastUpdateEl = document.querySelector('.last-update');
+            if (lastUpdateEl) {
+                lastUpdateEl.textContent = `Last updated: ${formatDateTime(Date.now())}`;
+            }
+
+            startCountdown();
+        }
+
+        async function fetchOrderBook() {
+            const loadingEl = document.querySelector('.loading');
+            const errorEl = document.querySelector('.error');
+
+            if (loadingEl) {
+                loadingEl.style.display = 'inline';
+            }
+            if (errorEl) {
+                errorEl.textContent = '';
+            }
+
+            try {
+                const response = await fetch('https://mkt-data-server.chenfei-demo.com/cn_stock/book');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const dataList = await response.json();
+                updateTable(dataList);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                if (errorEl) {
+                    errorEl.textContent = `Error: ${error.message}`;
+                }
+            } finally {
+                if (loadingEl) {
+                    loadingEl.style.display = 'none';
+                }
+            }
+        }
+
+        // Initial fetch
+        fetchOrderBook();
+
+        // Set up auto-refresh
+        autoRefreshInterval = setInterval(fetchOrderBook, REFRESH_INTERVAL * 1000);
+    </script>
+</body>
+</html>
