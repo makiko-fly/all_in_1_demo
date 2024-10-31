@@ -7,13 +7,72 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
             background-color: #f0f0f0;
+        }
+
+        .info-box {
+            width: 100%;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 0.9em;
+            line-height: 1.5;
+            color: #333;
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .info-header {
+            padding: 12px 20px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-header:hover {
+            background-color: #f0f1f2;
+        }
+
+        .info-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background-color: #fff;
+        }
+
+        .info-content.show {
+            max-height: 500px;
+            transition: max-height 0.5s ease-in;
+        }
+
+        .info-content-inner {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-content p {
+            margin: 0;
+            padding: 0;
+            white-space: pre-line;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
+            padding: 0 20px;
         }
 
         .header {
@@ -96,6 +155,28 @@
     </style>
 </head>
 <body>
+    <div class="info-box">
+        <div class="info-header">
+            <span>Demo 说明</span>
+            <span class="toggle-icon">▼</span>
+        </div>
+        <div class="info-content">
+            <div class="info-content-inner">
+                <p>前端水平有限，请见谅，
+                    这个小的 demo 项目展示的是 5 支股票的实时 book 快照，数据源来自 alltick 网站。
+                    该网站只提供了 book 的 tick data，如果有 order 或者 trade 的话就能更好展示了。
+                    我使用 websocket 接入对方的服务，然后存储到 redis 的 stream 中（生产环境建议用 Kafka），然后又起了一个服务来读取 redis 数据并插入 clickhouse 集群。
+                    然后又起了个 API 服务来拉取最新的 ClickHouse 数据展示到当前页面。
+
+                    我在 aws 上搭建了一个 k8s 集群，配置了常见的一些 resource, 包括 nodegroup, role, storage, deployment, service, ingress, domain, https 等。
+
+                    又在这个 k8s 上部署了一个 clickhouse 集群 (2 shards, 2 replicas)。用的是 altinity 的 ClickHouseInstallation,
+                    这个方法只需很少的步骤便可部署一个安全，高可用，易扩展的 clickhouse 集群。
+                    页面上的 InsertedFrom 是指从哪台机器进行的插入，Read From 是指从哪个 Shard 哪个 Replica 读取的。下面的表则显示了两个 Shard 的统计数据。
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <div class="title-section">
@@ -123,10 +204,24 @@
             <tbody id="bookBody"></tbody>
         </table>
 
+        <table class="book-table" style="margin-top: 20px;">
+            <thead>
+                <tr>
+                    <th>Server</th>
+                    <th>Row Count</th>
+                    <th>Min Date</th>
+                    <th>Max Date</th>
+                </tr>
+            </thead>
+            <tbody id="statsBody"></tbody>
+        </table>
+
         <div class="status">
             <span class="loading">Loading...</span>
             <span class="error"></span>
         </div>
+
+
     </div>
 
     <script>
@@ -181,23 +276,38 @@
             }, 1000);
         }
 
-        function updateTable(dataList) {
+        function updateTable(data) {
             const tbody = document.getElementById('bookBody');
+            const statsBody = document.getElementById('statsBody');
             tbody.innerHTML = '';
+            statsBody.innerHTML = '';
 
-            dataList.forEach(data => {
+            // Update book table
+            data.book.forEach(item => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${data.Symbol || '-'}</td>
-                    <td>${formatDateTime(data.LongTimestamp)}</td>
-                    <td>${formatNumber(data.BidSize1)}</td>
-                    <td>${formatNumber(data.BidPrice1)}</td>
-                    <td>${formatNumber(data.AskPrice1)}</td>
-                    <td>${formatNumber(data.AskSize1)}</td>
-                    <td>${data.HostName || '-'}</td>
-                    <td>${data.ReadFrom || '-'}</td>
+                    <td>${item.Symbol || '-'}</td>
+                    <td>${formatDateTime(item.LongTimestamp)}</td>
+                    <td>${formatNumber(item.BidSize1)}</td>
+                    <td>${formatNumber(item.BidPrice1)}</td>
+                    <td>${formatNumber(item.AskPrice1)}</td>
+                    <td>${formatNumber(item.AskSize1)}</td>
+                    <td>${item.HostName || '-'}</td>
+                    <td>${item.ReadFrom || '-'}</td>
                 `;
                 tbody.appendChild(row);
+            });
+
+            // Update stats table
+            data.stat.forEach(stat => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${stat.server || '-'}</td>
+                    <td>${formatNumber(stat.row_count)}</td>
+                    <td>${stat.min_date || '-'}</td>
+                    <td>${stat.max_date || '-'}</td>
+                `;
+                statsBody.appendChild(row);
             });
 
             const lastUpdateEl = document.querySelector('.last-update');
@@ -224,8 +334,8 @@
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                const dataList = await response.json();
-                updateTable(dataList);
+                const data = await response.json();
+                updateTable(data);
             } catch (error) {
                 console.error('Error fetching data:', error);
                 if (errorEl) {
@@ -243,6 +353,14 @@
 
         // Set up auto-refresh
         autoRefreshInterval = setInterval(fetchOrderBook, REFRESH_INTERVAL * 1000);
+
+        // Info box toggle functionality
+        document.querySelector('.info-header').addEventListener('click', function() {
+            const content = document.querySelector('.info-content');
+            const icon = document.querySelector('.toggle-icon');
+            content.classList.toggle('show');
+            icon.classList.toggle('rotated');
+        });
     </script>
 </body>
 </html>
