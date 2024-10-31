@@ -169,6 +169,7 @@
                     然后又起了个 API 服务来拉取最新的 ClickHouse 数据展示到当前页面。
 
                     我在 aws 上搭建了一个 k8s 集群，配置了常见的一些 resource, 包括 nodegroup, role, storage, deployment, service, ingress, domain, https 等。
+                    k8s dashboard 也能以 readonly 形式在公网访问，若需要展示请联系我。
                     当前大部分的服务都运行在了这个 k8s 集群上，只有当前的 websocket, redis 尚未部署，这一两天就会改好放上去。
 
                     又在这个 k8s 上部署了一个 clickhouse 集群 (2 shards, 2 replicas)。用的是 altinity 的 ClickHouseInstallation,
