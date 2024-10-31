@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chinese Stock Book</title>
     <style>
         body {
@@ -10,6 +10,7 @@
             margin: 0;
             padding: 0;
             background-color: #f0f0f0;
+            -webkit-text-size-adjust: 100%;
         }
 
         .info-box {
@@ -32,6 +33,7 @@
             align-items: center;
             user-select: none;
             border-bottom: 1px solid #eee;
+            min-height: 44px;
         }
 
         .info-header:hover {
@@ -100,6 +102,8 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
             font-size: 0.9em;
             table-layout: fixed;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
         }
 
         .book-table th, .book-table td {
@@ -114,6 +118,9 @@
         .book-table th {
             background-color: #4CAF50;
             color: white;
+            position: sticky;
+            top: 0;
+            z-index: 1;
         }
 
         .book-table tr:hover {
@@ -146,10 +153,89 @@
             color: #f44336;
         }
 
+        /* Mobile Responsive Styles */
         @media (max-width: 768px) {
+            .container {
+                padding: 0 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .title-section {
+                flex-direction: column;
+                gap: 5px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin: 10px 0;
+            }
+
+            .status-info {
+                font-size: 0.8em;
+            }
+
             .book-table {
+                font-size: 0.8em;
                 display: block;
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                white-space: nowrap;
+                border-radius: 4px;
+            }
+
+            .book-table th, .book-table td {
+                padding: 6px 4px;
+                width: auto !important;
+            }
+
+            .info-box {
+                margin: 10px 0;
+            }
+
+            .info-header {
+                padding: 10px;
+            }
+
+            .info-content-inner {
+                padding: 15px;
+            }
+
+            .info-content p {
+                font-size: 0.9em;
+            }
+
+            .status {
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 15px;
+            }
+
+            .toggle-icon {
+                font-size: 1.2em;
+                padding: 5px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 5px;
+            }
+
+            h1 {
+                font-size: 1.2em;
+            }
+
+            .book-table {
+                font-size: 0.75em;
+            }
+
+            .info-content.show {
+                max-height: 800px;
             }
         }
     </style>
@@ -168,14 +254,14 @@
                     我使用 websocket 接入对方的服务，然后存储到 redis 的 stream 中（生产环境建议用 Kafka），然后又起了一个服务来读取 redis 数据并插入 clickhouse 集群。
                     然后又起了个 API 服务来拉取最新的 ClickHouse 数据展示到当前页面。
 
-                    我在 aws 上搭建了一个 k8s 集群，配置了常见的一些 resource, 包括 nodegroup, role, storage, deployment, service, ingress, domain, https 等。
+                    我在 aws 上搭建了一个 k8s 集群，配置了常见的一些 resource, 包括 nodegroup, role, storage, namespace, deployment, service, ingress, domain, https 等。
                     k8s dashboard 也能以 readonly 形式在公网访问，若需要展示请联系我。
                     当前大部分的服务都运行在了这个 k8s 集群上，只有当前的 websocket, redis 尚未部署，这一两天就会改好放上去。
 
                     又在这个 k8s 上部署了一个 clickhouse 集群 (2 shards, 2 replicas)。用的是 altinity 的 ClickHouseInstallation,
                     这个方法只需很少的步骤便可部署一个安全，高可用，易扩展的 clickhouse 集群。
                     页面上的 InsertedFrom 是指从哪台机器进行的插入，Read From 是指从哪个 Shard 哪个 Replica 读取的。下面的表则显示了两个 Shard 的统计数据。
-                    为了展示客户端能访问到集群的不同 Shard 或者不同 Replica，还是按 rand 来选 Shard，生产环境 Shard 方法需要按照业务需求来做定义。
+                    为了展示客户端能访问到集群的不同 Shard 或者不同 Replica，还是按 rand 来选 Shard，生产环境 Shard 方法需要按照业务需求来做定义。</p>
             </div>
         </div>
     </div>
@@ -223,8 +309,6 @@
             <span class="loading">Loading...</span>
             <span class="error"></span>
         </div>
-
-
     </div>
 
     <script>
