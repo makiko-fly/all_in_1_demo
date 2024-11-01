@@ -72,9 +72,10 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 100%;
             margin: 0 auto;
             padding: 0 20px;
+            overflow-x: auto;
         }
 
         .header {
@@ -108,11 +109,22 @@
 
         .book-table th, .book-table td {
             padding: 8px;
-            text-align: left;
+            text-align: right;
             border-bottom: 1px solid #ddd;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .book-table th:first-child,
+        .book-table td:first-child,
+        .book-table th:nth-child(2),
+        .book-table td:nth-child(2),
+        .book-table th:last-child,
+        .book-table td:last-child,
+        .book-table th:nth-last-child(2),
+        .book-table td:nth-last-child(2) {
+            text-align: left;
         }
 
         .book-table th {
@@ -127,15 +139,28 @@
             background-color: #f5f5f5;
         }
 
-        /* Column widths */
-        .book-table th:nth-child(1) { width: 8%; }   /* Symbol */
-        .book-table th:nth-child(2) { width: 15%; }  /* DateTime */
-        .book-table th:nth-child(3) { width: 7%; }   /* Bid Price */
-        .book-table th:nth-child(4) { width: 7%; }   /* Bid Size */
-        .book-table th:nth-child(5) { width: 7%; }   /* Ask Price */
-        .book-table th:nth-child(6) { width: 7%; }   /* Ask Size */
-        .book-table th:nth-child(7) { width: 15%; }  /* Hostname */
-        .book-table th:nth-child(8) { width: 15%; }  /* Read From */
+        .book-table th:nth-child(1) { width: 4%; }   /* Name */
+        .book-table th:nth-child(2) { width: 5%; }   /* Symbol */
+        .book-table th:nth-child(3) { width: 12%; }  /* DateTime */
+        .book-table th:nth-child(4),
+        .book-table th:nth-child(5),
+        .book-table th:nth-child(6),
+        .book-table th:nth-child(7),
+        .book-table th:nth-child(8) { width: 5%; }  /* Bid Levels */
+        .book-table th:nth-child(9),
+        .book-table th:nth-child(10),
+        .book-table th:nth-child(11),
+        .book-table th:nth-child(12),
+        .book-table th:nth-child(13) { width: 5%; }  /* Ask Levels */
+        .book-table th:nth-child(15) { width: 6%; }  /* Read From */
+
+        .bid-columns {
+            background-color: #ffebee;
+        }
+
+        .ask-columns {
+            background-color: #e8f5e9;
+        }
 
         .status {
             margin-top: 20px;
@@ -153,10 +178,9 @@
             color: #f44336;
         }
 
-        /* Mobile Responsive Styles */
         @media (max-width: 768px) {
             .container {
-                padding: 0 10px;
+                padding: 0 5px;
             }
 
             .header {
@@ -170,72 +194,12 @@
                 gap: 5px;
             }
 
-            h1 {
-                font-size: 1.5em;
-                margin: 10px 0;
-            }
-
-            .status-info {
-                font-size: 0.8em;
-            }
-
             .book-table {
                 font-size: 0.8em;
-                display: block;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                white-space: nowrap;
-                border-radius: 4px;
             }
 
             .book-table th, .book-table td {
-                padding: 6px 4px;
-                width: auto !important;
-            }
-
-            .info-box {
-                margin: 10px 0;
-            }
-
-            .info-header {
-                padding: 10px;
-            }
-
-            .info-content-inner {
-                padding: 15px;
-            }
-
-            .info-content p {
-                font-size: 0.9em;
-            }
-
-            .status {
-                flex-direction: column;
-                gap: 10px;
-                margin-top: 15px;
-            }
-
-            .toggle-icon {
-                font-size: 1.2em;
-                padding: 5px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 0 5px;
-            }
-
-            h1 {
-                font-size: 1.2em;
-            }
-
-            .book-table {
-                font-size: 0.75em;
-            }
-
-            .info-content.show {
-                max-height: 800px;
+                padding: 4px;
             }
         }
     </style>
@@ -250,7 +214,7 @@
             <div class="info-content-inner">
                 <p>前端水平一般，所以这个页面做得比较简单，还请见谅。
 
-                    这个小的 demo 项目展示的是 5 支股票的实时 book 快照，数据源来自 alltick 网站。该网站只提供了 book 的 tick data，如果有 order 或者 trade 的话就能更好展示了。
+                    这个小的 demo 项目展示的是 4 支股票的实时 book 快照，数据源来自 alltick 网站。该网站只提供了 book 的 tick data，如果有 order 或者 trade 的话就能展示多张表了。
                     我使用 websocket 接入对方的服务，然后存储到 redis 的 stream 中（生产环境建议用 Kafka），然后又起了一个服务来读取 redis 数据并插入 clickhouse 集群。
                     然后又起了个 API 服务来拉取最新的 ClickHouse 数据展示到当前页面。
 
@@ -280,13 +244,19 @@
         <table class="book-table">
             <thead>
                 <tr>
+                    <th>Name</th>
                     <th>Symbol</th>
                     <th>DateTime</th>
-                    <th>Bid Size1</th>
-                    <th>Bid Price1</th>
-                    <th>Ask Price1</th>
-                    <th>Ask Size1</th>
-                    <th>Inserted From</th>
+                    <th class="bid-columns">BidLv5</th>
+                    <th class="bid-columns">BidLv4</th>
+                    <th class="bid-columns">BidLv3</th>
+                    <th class="bid-columns">BidLv2</th>
+                    <th class="bid-columns">BidLv1</th>
+                    <th class="ask-columns">AskLv1</th>
+                    <th class="ask-columns">AskLv2</th>
+                    <th class="ask-columns">AskLv3</th>
+                    <th class="ask-columns">AskLv4</th>
+                    <th class="ask-columns">AskLv5</th>
                     <th>Read From</th>
                 </tr>
             </thead>
@@ -339,6 +309,14 @@
             return number.toString();
         }
 
+        function formatPriceSize(price, size) {
+            if (price === undefined || price === null || isNaN(price) ||
+                size === undefined || size === null || isNaN(size)) {
+                return '-';
+            }
+            return `${price}|${size}`;
+        }
+
         function updateCountdown(secondsLeft) {
             const countdownEl = document.querySelector('.refresh-countdown');
             if (countdownEl) {
@@ -373,13 +351,19 @@
             data.book.forEach(item => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
+                    <td>${item.Name || '-'}</td>
                     <td>${item.Symbol || '-'}</td>
                     <td>${formatDateTime(item.LongTimestamp)}</td>
-                    <td>${formatNumber(item.BidSize1)}</td>
-                    <td>${formatNumber(item.BidPrice1)}</td>
-                    <td>${formatNumber(item.AskPrice1)}</td>
-                    <td>${formatNumber(item.AskSize1)}</td>
-                    <td>${item.HostName || '-'}</td>
+                    <td class="bid-columns">${formatPriceSize(item.BidPrice5, item.BidSize5)}</td>
+                    <td class="bid-columns">${formatPriceSize(item.BidPrice4, item.BidSize4)}</td>
+                    <td class="bid-columns">${formatPriceSize(item.BidPrice3, item.BidSize3)}</td>
+                    <td class="bid-columns">${formatPriceSize(item.BidPrice2, item.BidSize2)}</td>
+                    <td class="bid-columns">${formatPriceSize(item.BidPrice1, item.BidSize1)}</td>
+                    <td class="ask-columns">${formatPriceSize(item.AskPrice1, item.AskSize1)}</td>
+                    <td class="ask-columns">${formatPriceSize(item.AskPrice2, item.AskSize2)}</td>
+                    <td class="ask-columns">${formatPriceSize(item.AskPrice3, item.AskSize3)}</td>
+                    <td class="ask-columns">${formatPriceSize(item.AskPrice4, item.AskSize4)}</td>
+                    <td class="ask-columns">${formatPriceSize(item.AskPrice5, item.AskSize5)}</td>
                     <td>${item.ReadFrom || '-'}</td>
                 `;
                 tbody.appendChild(row);
