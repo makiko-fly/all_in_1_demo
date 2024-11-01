@@ -174,6 +174,9 @@
         @media (max-width: 768px) {
             .container {
                 padding: 0 5px;
+                margin: 0;
+                width: 100%;
+                max-width: 100%;
             }
 
             .header {
@@ -189,32 +192,41 @@
 
             .book-table {
                 font-size: 0.8em;
+                margin: 10px 0;
+                width: 100%;
             }
 
             .book-table th, .book-table td {
                 padding: 4px;
+                display: none; /* Hide all columns by default */
             }
 
-            .book-table th, .book-table td {
-                display: none;
-            }
-
+            /* Show only the specified columns */
             .book-table th:nth-child(1),
-            .book-table td:nth-child(1),
+            .book-table td:nth-child(1),  /* Name */
+            .book-table th:nth-child(3),
+            .book-table td:nth-child(3),  /* DateTime */
             .book-table th:nth-child(8),
-            .book-table td:nth-child(8),
+            .book-table td:nth-child(8),  /* BidLv1 */
             .book-table th:nth-child(9),
-            .book-table td:nth-child(9),
-            .book-table th:nth-child(14),
-            .book-table td:nth-child(14) {
+            .book-table td:nth-child(9)   /* AskLv1 */ {
                 display: table-cell;
             }
 
-            .book-table th:nth-child(1) { width: 20%; }
-            .book-table th:nth-child(8) { width: 25%; }
-            .book-table th:nth-child(9) { width: 25%; }
-            .book-table th:nth-child(14) { width: 30%; }
+            /* Adjust widths for visible columns */
+            .book-table th:nth-child(1) { width: 20%; }  /* Name */
+            .book-table th:nth-child(3) { width: 35%; }  /* DateTime */
+            .book-table th:nth-child(8) { width: 22.5%; }  /* BidLv1 */
+            .book-table th:nth-child(9) { width: 22.5%; }  /* AskLv1 */
 
+            /* Style for DateTime column */
+            .book-table td:nth-child(3) {
+                white-space: normal;
+                word-wrap: break-word;
+                font-size: 0.75em;
+            }
+
+            /* Keep the second table (stats) as is */
             .book-table:nth-of-type(2) th,
             .book-table:nth-of-type(2) td {
                 display: table-cell;
@@ -232,26 +244,27 @@
                 width: 20%;
             }
 
-    .info-box {
-        margin: 10px;
-    }
+            .info-box {
+                margin: 10px;
+            }
 
-    .info-header {
-        padding: 12px 15px;
-        font-size: 14px;
-    }
+            .info-header {
+                padding: 12px 15px;
+                font-size: 14px;
+            }
 
-    .info-content-inner {
-        padding: 15px;
-    }
+            .info-content-inner {
+                padding: 15px;
+            }
 
-    .info-content-inner p {
-        font-size: 13px;
-        line-height: 1.5;
-        margin-bottom: 12px;
-        white-space: normal; /* Changed from pre to normal for better mobile wrapping */
-    }
+            .info-content-inner p {
+                font-size: 13px;
+                line-height: 1.5;
+                margin-bottom: 12px;
+                white-space: normal;
+            }
         }
+
     </style>
 </head>
 <body>
@@ -262,7 +275,7 @@
         </div>
         <div class="info-content">
             <div class="info-content-inner">
-                <p>前端水平一般，所以这个页面做得比较简单，还请见谅。</p>
+                <p>前端水平一般，所以这个页面做得比较简单，还请见谅。要看到全部字段，请在 PC 上浏览。</p>
                 <p></p>
                 <p>这个小的 demo 项目展示的是 4 支股票的实时 book 快照，数据源来自 alltick 网站。该网站只提供了 book 的 tick data，如果有 order 或者 trade 的话就能展示多张表了。</p>
                 <p>我使用 websocket 接入对方的服务，然后存储到 redis 的 stream 中（生产环境建议用 Kafka），然后又起了一个服务来读取 redis 数据并插入 clickhouse 集群。</p>
